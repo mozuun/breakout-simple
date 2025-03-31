@@ -1,0 +1,44 @@
+* {
+  margin: 0;
+  padding: 0;
+}
+
+body,
+html {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+  position: relative;
+}
+
+#canvas {
+  border-left: 2px solid #fff;
+  border-right: 2px solid #fff;
+  background-color: #333;
+  position: absolute;
+  z-index: 2;
+}
+
+#bgcanvas {
+  background-color: #333;
+  position: absolute;
+  z-index: 1;
+  border: 3px solid #333;
+}
+
+#inner {
+  display: inherit;
+  position: relative;
+  z-index: 5;
+}
+
+#title {
+  width: 100px;
+  padding: 10px 0;
+  font-weight: bold;
+}
+
+.hidden {
+  display: none;
+}
