@@ -9,36 +9,106 @@ html {
   justify-content: center;
   align-items: center;
   height: 100%;
+  background-color: #f7f7f7;
+}
+
+#game_inner {
   position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 500px;
+  height: 500px;
 }
 
 #canvas {
-  border-left: 2px solid #fff;
-  border-right: 2px solid #fff;
   background-color: #333;
   position: absolute;
-  z-index: 2;
+  z-index: 0;
+  border-radius: 4px;
 }
 
-#bgcanvas {
-  background-color: #333;
-  position: absolute;
-  z-index: 1;
-  border: 3px solid #333;
-}
-
-#inner {
-  display: inherit;
+#start_screen {
   position: relative;
-  z-index: 5;
+  white-space: nowrap;
+  z-index: 1;
+  width: 80%;
+  height: 80%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 20px;
+  border: 1px solid white;
+  border-radius: 4px;
 }
 
-#title {
-  width: 100px;
-  padding: 10px 0;
+#start_title {
+  font-size: 32px;
+  letter-spacing: 1px;
+  color: white;
   font-weight: bold;
 }
 
+#start_btn {
+  color: white;
+  border: 1px solid white;
+  background: none;
+  cursor: pointer;
+  font-size: 16px;
+  border-radius: 4px;
+  padding: 10px 20px;
+}
+
+#game_over_screen {
+  width: 80%;
+  height: 80%;
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 20px;
+  border: 1px solid white;
+  background-color: #00000080;
+  border-radius: 4px;
+}
+
+#game_over_title {
+  font-size: 32px;
+  letter-spacing: 1px;
+  color: white;
+  font-weight: bold;
+}
+
+#score {
+  font-size: 24px;
+  color: white;
+}
+
+#again_btn {
+  color: white;
+  border: 1px solid white;
+  background: none;
+  cursor: pointer;
+  font-size: 16px;
+  border-radius: 4px;
+  padding: 10px 20px;
+}
+
 .hidden {
-  display: none;
+  display: none !important;
+}
+
+@media screen and (max-width: 516px) {
+  #game_inner {
+    width: 100%;
+    height: auto;
+    aspect-ratio: 1 / 1;
+  }
+
+  #start_title {
+    font-size: 24px;
+  }
 }

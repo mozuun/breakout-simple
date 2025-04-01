@@ -1,28 +1,73 @@
 // Canvas要素の取得
 const canvas = document.getElementById("canvas");
-/** @type {CanvasRenderingContext2D} */
 const ctx = canvas.getContext("2d");
 
-// BgCanvas要素の取得
-const bgcanvas = document.getElementById("bgcanvas");
-const bgctx = bgcanvas.getContext("2d");
-
-const StartBtn = document.getElementById("title");
+const StartBtn = document.getElementById("start_btn");
+const AgainBtn = document.getElementById("again_btn");
+const GameInner = document.getElementById("game_inner");
+const StartScreen = document.getElementById("start_screen");
+const GameOverScreen = document.getElementById("game_over_screen");
+const TotalScore = document.getElementById("score");
+const BreakPoint = 516;
 
 //　Canvasサイズ
-const CanvasWidth = 350;
-const CanvasHeight = 300;
+let CanvasSize;
+let ScreenWidth;
+let ScreenHeight;
 
-canvas.width = CanvasWidth;
-canvas.height = CanvasHeight;
+// ボール
+let BallRadius;
+let BallColor = "white";
 
-// BgCanvasサイズ
-bgcanvas.width = 700;
-bgcanvas.height = 300;
+// パドル
+let PaddleWidth;
+let PaddleHeight;
+let PaddleSpeed = 7;
+let PaddleColor = "white";
+let PaddleOffsetBottom = 20;
 
-// スクリーンサイズ(描画サイズ)
-const ScreenWidth = CanvasWidth;
-const ScreenHeight = CanvasHeight;
+//　ブロック変数の定義
+let blockRowCount; // ブロックの行数
+let blockColumnCount; // ブロックの列数
+let blockWidth; // ブロックの幅
+let blockHeight; // ブロックの高さ
+let blockOffsetTop = 50; //ブロックの上からのオフセット
+
+function resizeCanvas() {
+  if (window.innerWidth >= BreakPoint) {
+    CanvasSize = 500;
+  } else {
+    const canvas_w = window.innerWidth;
+    CanvasSize = canvas_w - 16;
+  }
+  // canvasサイズ
+  canvas.width = CanvasSize;
+  canvas.height = CanvasSize;
+  // スクリーンサイズ(描画サイズ)
+  ScreenWidth = CanvasSize;
+  ScreenHeight = CanvasSize;
+
+  if (window.innerWidth >= BreakPoint) {
+    BallRadius = 10;
+    PaddleWidth = 80;
+    PaddleHeight = 16;
+    //　ブロック
+    blockColumnCount = 8;
+    blockHeight = ScreenHeight / 20;
+  } else {
+    BallRadius = 8;
+    PaddleWidth = 60;
+    PaddleHeight = 8;
+    //　ブロック
+    blockColumnCount = 6;
+    blockHeight = ScreenHeight / 16;
+  }
+  blockRowCount = 1;
+  blockWidth = ScreenWidth / blockColumnCount;
+}
+
+// 初回実行
+resizeCanvas();
 
 // アニメーションIDを定義
 let animationId;
@@ -31,39 +76,25 @@ let animationId;
 let RightPressed = false;
 let LeftPressed = false;
 
-// ボールのサイズ
-const BallRadius = 6;
-
 //　ボールの座標
 let BallX = ScreenWidth / 2;
 let BallY = ScreenHeight - 50;
 
 // ボールの移動量
-let dx = 3;
-let dy = -3;
-
-// パドルのサイズ
-const PaddleWidth = 60;
-const PaddleHeight = 10;
+let dx;
+let dy;
 
 // パドルの座標
 let PaddleX = (ScreenWidth - PaddleWidth) / 2;
-let PaddleY = ScreenHeight - PaddleHeight;
+let PaddleY = ScreenHeight - PaddleHeight - PaddleOffsetBottom;
 
-//　ブロック変数の定義
-let blockRowCount = 2; // ブロックの行数（3行）
-let blockColumnCount = 10; // ブロックの列数（5列）
-const blockWidth = 35; // ブロックの幅（75ピクセル）
-const blockHeight = 20; // ブロックの高さ（20ピクセル)
+let breakPower = 1;
+let status_up = true;
+let status_dawn = true;
 
-// スコア
-let score = 0;
-
-// ライフ
-let life = 3;
-
-// レベル
-let level = 1;
+let score; // スコア
+let life; // ライフ
+let level; // レベル
 
 // 画像
 const images = [
@@ -81,17 +112,16 @@ const images = [
 ];
 
 // 画像のソースを設定
-images[0].src = "./image/赤ブロック.png";
-images[1].src = "./image/青ブロック.png";
-images[2].src = "./image/緑ブロック.png";
-images[3].src = "./image/紫ブロック.png";
-images[4].src = "./image/黄色ブロック.png";
-images[5].src = "./image/赤ブロック.png";
-images[6].src = "./image/青ブロック.png";
-images[7].src = "./image/緑ブロック.png";
-images[8].src = "./image/紫ブロック.png";
-images[9].src = "./image/黄色ブロック.png";
-images[10].src = "./image/黒ブロック.png";
+images[0].src = "/image/赤ブロック.png";
+images[1].src = "/image/青ブロック.png";
+images[2].src = "/image/緑ブロック.png";
+images[3].src = "/image/紫ブロック.png";
+images[4].src = "/image/黄色ブロック.png";
+images[5].src = "/image/赤ブロック.png";
+images[6].src = "/image/青ブロック.png";
+images[7].src = "/image/緑ブロック.png";
+images[8].src = "/image/紫ブロック.png";
+images[9].src = "/image/黄色ブロック.png";
 
 // 音
 function playSound(fileName) {
@@ -114,83 +144,37 @@ for (let y = 0; y < blockRowCount; y++) {
   }
 }
 
-// 各ステージの配列(最大列数10)
-const stages = [
-  // ステージ1の配置
-  [[1, 1, 1, 1, 1, 1, 1, 1, 1, 1]],
-  [
-    [1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-    [1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-  ],
-  [
-    [2, 2, 2, 2, 2, 2, 2, 2, 2, 2],
-    [1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-  ],
-  [
-    [10, 2, 2, 2, 2, 2, 3, 3, 3, 3],
-    [1, 1, 10, 1, 1, 1, 1, 1, 1, 1],
-  ],
-  [
-    [10, 2, 2, 2, 2, 2, 3, 3, 3, 3],
-    [1, 1, 10, 1, 1, 1, 1, 10, 1, 1],
-    [1, 1, 0, 1, 1, 10, 1, 1, 1, 1],
-  ],
-  [
-    [10, 2, 2, 2, 2, 2, 3, 3, 3, 3],
-    [5, 1, 10, 1, 1, 5, 1, 10, 1, 1],
-    [1, 1, 0, 1, 1, 10, 1, 1, 1, 1],
-    [5, 1, 0, 1, 1, 10, 1, 1, 1, 1],
-  ],
-  [
-    [10, 2, 2, 2, 2, 6, 3, 3, 3, 3],
-    [1, 5, 10, 5, 1, 1, 1, 10, 1, 1],
-    [1, 1, 0, 1, 1, 10, 1, 1, 1, 1],
-    [2, 4, 0, 1, 1, 10, 1, 1, 1, 1],
-  ],
-  [
-    [10, 10, 2, 2, 10, 5, 3, 3, 3, 3],
-    [1, 1, 10, 1, 1, 1, 1, 10, 1, 1],
-    [1, 5, 0, 1, 1, 10, 1, 1, 1, 1],
-    [1, 10, 10, 1, 1, 1, 1, 10, 1, 1],
-  ],
-  [
-    [10, 2, 2, 2, 2, 2, 3, 3, 3, 3],
-    [1, 2, 10, 1, 1, 1, 1, 10, 1, 1],
-    [1, 1, 10, 1, 1, 10, 10, 10, 1, 1],
-    [10, 2, 2, 2, 2, 2, 3, 3, 3, 3],
-    [1, 2, 10, 1, 1, 1, 1, 10, 1, 1],
-    [1, 1, 10, 1, 1, 10, 10, 10, 1, 1],
-  ],
-  [
-    [2, 10, 2, 2, 2, 2, 2, 2, 2, 2],
-    [2, 2, 2, 2, 2, 2, 2, 2, 2, 2],
-    [2, 2, 2, 10, 2, 2, 2, 2, 2, 2],
-    [2, 2, 2, 2, 2, 2, 10, 2, 2, 2],
-    [2, 2, 2, 2, 2, 2, 2, 2, 2, 2],
-    [2, 10, 2, 2, 2, 2, 2, 10, 2, 2],
-    [10, 10, 2, 2, 2, 2, 2, 2, 2, 2],
-    [2, 2, 2, 2, 2, 2, 2, 2, 2, 2],
-  ],
-];
-
 // 初期化処理
 function init() {
+  score = 0; // スコア
+  life = 3; // ライフ
+  level = 1;
+  dx = 3;
+  dy = -4;
   initBlocks();
   draw();
 }
 
 // ブロックの再生成関数
 function initBlocks() {
-  // ブロックの配置をstageDataから持ってくる
-  const stageData = stages[level - 1];
-  blockRowCount = stageData.length;
-  blockColumnCount = stageData[0].length;
-
+  blockRowCount = Math.floor(Math.random() * 2) + 2;
+  //　レベル5以上の場合
+  if (level > 5) {
+    blockRowCount = Math.floor(Math.random() * 6) + 4;
+  }
   blocks = [];
   for (let y = 0; y < blockRowCount; y++) {
     blocks[y] = [];
     for (let x = 0; x < blockColumnCount; x++) {
-      const durability = stageData[y][x];
+      let durability = 1;
+      //　レベル5以上の場合
+      if (level > 5) {
+        durability = Math.floor(Math.random() * 3) + 1;
+      }
+      // 5%の確率
+      if (Math.random() < 0.05) {
+        durability = 0; // 1/2で0
+      }
       blocks[y][x] = {
         x: x * blockWidth,
         y: y * blockHeight,
@@ -205,36 +189,26 @@ function initBlocks() {
 // 次のレベルへ行く関数
 function nextLevel() {
   level++; // レベルを上げる
-  playSound("クリア.mp3");
-
-  // 全てクリアした時
-  if (level > stages.length) {
-    alert("全てのステージをクリアしました！");
-    cancelAnimationFrame(animationId);
-    return; // ゲーム終了
-  }
+  playSound("clear.mp3");
 
   // ボールの速度を少し上げる
-  dy *= 1.2;
+  dy *= -1.2;
 
-  BallX = ScreenWidth / 2; // ボールの位置をリセット
-  BallY = ScreenHeight - 50;
-  PaddleX = (ScreenWidth - PaddleWidth) / 2; // パドルの位置をリセット
   initBlocks(); // 新しい配置のブロックを生成
 }
 
 // ボールを描く関数
 function drawBall() {
-  ctx.beginPath(); //　新しくパスを開始
-  ctx.fillStyle = "#fff";
+  ctx.beginPath();
+  ctx.fillStyle = BallColor;
   ctx.arc(BallX, BallY, BallRadius, 0, Math.PI * 2);
   ctx.fill();
 }
 
 // パドルを描く関数
 function drawPaddle() {
-  ctx.beginPath(); //　新しくパスを開始
-  ctx.fillStyle = "#fff";
+  ctx.beginPath();
+  ctx.fillStyle = PaddleColor;
   ctx.fillRect(PaddleX, PaddleY, PaddleWidth, PaddleHeight);
 }
 
@@ -245,7 +219,7 @@ function drawBlocks() {
       if (blocks[y][x].isVisible === true) {
         // 座標を定義
         let printX = blocks[y][x].x;
-        let printY = blocks[y][x].y;
+        let printY = blocks[y][x].y + blockOffsetTop;
 
         // 各ブロックの耐久度を取得
         const durability = blocks[y][x].durability;
@@ -259,9 +233,6 @@ function drawBlocks() {
 
         // 列インデックスに基づいて色を選択
         let color = images[y % images.length];
-        if (maxDurability == 10) {
-          color = images[10];
-        }
 
         ctx.drawImage(color, printX, printY, blockWidth, blockHeight);
         // 線のスタイル
@@ -284,7 +255,7 @@ function collisionDetection() {
     for (let x = 0; x < blockColumnCount; x++) {
       if (blocks[y][x].isVisible === true) {
         const blockX = blocks[y][x].x;
-        const blockY = blocks[y][x].y;
+        const blockY = blocks[y][x].y + blockOffsetTop;
         const maxDurability = blocks[y][x].maxDurability;
         if (
           blockX < BallX + BallRadius &&
@@ -297,35 +268,35 @@ function collisionDetection() {
           } else {
             hasCollidedY = true;
           }
-          if (maxDurability !== 10) {
-            // 耐久度を減らす
-            blocks[y][x].durability -= 1;
+          // 耐久度を減らす
+          blocks[y][x].durability -= breakPower;
 
-            // 耐久度が0以下になったらブロックを消す
-            if (blocks[y][x].durability <= 0) {
-              blocks[y][x].isVisible = false; // ブロックを消す
-              score++; // スコア加算
-            }
+          // 耐久度が0以下になったらブロックを消す
+          if (blocks[y][x].durability <= 0) {
+            blocks[y][x].isVisible = false; // ブロックを消す
+            onBlockDestroyed(blockX, blockY);
+            score++; // スコア加算
           }
         }
       }
     }
   }
 
-  if (hasCollidedX) {
+  if (hasCollidedX && status_up) {
     dx = -dx;
-    playSound("ボール反転.mp3");
+    playSound("ball-bounce.mp3");
   }
 
   // ループ終了後にボールの速度を反転
-  if (hasCollidedY) {
+  if (hasCollidedY && status_up) {
     dy = -dy;
     dx += (Math.random() - 0.5) * 0.5;
-    playSound("ボール反転.mp3");
+    playSound("ball-bounce.mp3");
   }
 
   // 全てのブロックが壊れていたら次のレベルへ
   if (checkAllBlocksDestroyed()) {
+    score += 100;
     nextLevel();
   }
 }
@@ -334,7 +305,7 @@ function collisionDetection() {
 function checkAllBlocksDestroyed() {
   for (let y = 0; y < blockRowCount; y++) {
     for (let x = 0; x < blockColumnCount; x++) {
-      if (blocks[y][x].isVisible && blocks[y][x].durability !== 10) {
+      if (blocks[y][x].isVisible) {
         return false; // まだ壊れていないブロックがある
       }
     }
@@ -351,94 +322,45 @@ function getColorFilter(durability, maxDurability) {
 // スコアの関数
 function drawScore() {
   // スコア自体
-  bgctx.beginPath(); // パスの開始
-  bgctx.strokeStyle = "#fff";
-  bgctx.strokeRect(40, 60, 95, 70);
-  bgctx.closePath(); // パスの終了
-
-  // スコアの文字
-  bgctx.beginPath(); // パスの開始
-  const text = "Score";
-  const textWidth = bgctx.measureText(text).width; // 文字の幅
-  const centerX = (175 - textWidth) / 2; //　中央に配置
-  bgctx.font = "20px Arial";
-  bgctx.fillStyle = "#fff";
-  bgctx.fillText(text, centerX, 40);
-  bgctx.closePath(); // パスの終了
-
-  // スコア自体
-  bgctx.beginPath(); // パスの開始
-  const ScoreText = score;
-  const ScoreTextWidth = bgctx.measureText(ScoreText).width; // 文字の幅
-  const ScoreCenterX = (175 - ScoreTextWidth) / 2; //　中央に配置
-  bgctx.font = "22px Arial";
-  bgctx.fillStyle = "#fff";
-  bgctx.fillText(ScoreText, ScoreCenterX, 105);
-  bgctx.closePath(); // パスの終了
+  ctx.beginPath(); // パスの開始
+  const ScoreText = String(score).padStart(5, "0"); // 10桁ゼロ埋め
+  ctx.font = "20px Arial";
+  ctx.fillStyle = "white";
+  const ScoreTextWidth = ctx.measureText(ScoreText).width; // 文字の幅
+  const ScoreCenterX = (ScreenWidth - ScoreTextWidth) / 2; //　中央に配置
+  ctx.fillText(ScoreText, ScoreCenterX, 35);
+  ctx.closePath(); // パスの終了
 }
 
 // ライフの関数
 function drawLife() {
-  // スコア自体
-  bgctx.beginPath(); // パスの開始
-  bgctx.strokeStyle = "#fff";
-  bgctx.strokeRect(40, 205, 95, 70);
-  bgctx.closePath(); // パスの終了
-
-  // ライフの文字
-  bgctx.beginPath(); // パスの開始
-  const text = "Life";
-  const textWidth = bgctx.measureText(text).width; // 文字の幅
-  const centerX = (175 - textWidth) / 2; //　中央に配置
-  bgctx.font = "20px Arial";
-  bgctx.fillStyle = "#fff";
-  bgctx.fillText(text, centerX, 190);
-  bgctx.closePath(); // パスの終了
-
   // ライフ自体
-  bgctx.beginPath(); // パスの開始
-  const LifeText = life;
-  const LifeTextWidth = bgctx.measureText(LifeText).width; // 文字の幅
-  const LifeCenterX = (175 - LifeTextWidth) / 2; //　中央に配置
-  bgctx.font = "22px Arial";
-  bgctx.fillStyle = "#fa4747";
-  bgctx.fillText(LifeText, LifeCenterX, 250);
-  bgctx.closePath(); // パスの終了
+  ctx.beginPath(); // パスの開始
+  ctx.font = "20px Arial";
+  ctx.fillStyle = "red";
+  const LifeText = "HP " + life + "/3";
+  const LifeTextWidth = ctx.measureText(LifeText).width;
+  const LifeCenterX = LifeTextWidth / 2; //　中央に配置
+  ctx.fillText(LifeText, LifeCenterX, 35);
+  ctx.closePath(); // パスの終了
 }
 
 // レベルの関数
 function drawLevel() {
-  // レベル自体
-  bgctx.beginPath(); // パスの開始
-  bgctx.strokeStyle = "#fff";
-  bgctx.strokeRect(565, 60, 95, 70);
-  bgctx.closePath(); // パスの終了
-
-  // スコアの文字
-  bgctx.beginPath(); // パスの開始
-  const text = "Level";
-  const textWidth = bgctx.measureText(text).width; // 文字の幅
-  const centerX = 560 + textWidth / 2; //　中央に配置
-  bgctx.font = "20px Arial";
-  bgctx.fillStyle = "#fff";
-  bgctx.fillText(text, centerX, 40);
-  bgctx.closePath(); // パスの終了
-
   // スコア自体
-  bgctx.beginPath(); // パスの開始
-  const ScoreText = level;
-  const ScoreTextWidth = bgctx.measureText(ScoreText).width; // 文字の幅
-  const ScoreCenterX = 596 + ScoreTextWidth; //　中央に配置
-  bgctx.font = "22px Arial";
-  bgctx.fillStyle = "#fff";
-  bgctx.fillText(ScoreText, ScoreCenterX, 105);
-  bgctx.closePath(); // パスの終了
+  ctx.beginPath(); // パスの開始
+  const LevelText = "Lv " + level;
+  const LevelTextWidth = ctx.measureText(LevelText).width; // 文字の幅
+  const LevelCenterX = ScreenWidth - LevelTextWidth - 25; //　中央に配置
+  ctx.font = "20px Arial";
+  ctx.fillStyle = "green";
+  ctx.fillText(LevelText, LevelCenterX, 35);
+  ctx.closePath(); // パスの終了
 }
 
 //　描画処理
 function draw() {
   ctx.clearRect(0, 0, ScreenWidth, ScreenHeight);
-  bgctx.clearRect(0, 0, bgcanvas.width, bgcanvas.height);
   drawBall();
   drawPaddle();
   drawBlocks();
@@ -446,55 +368,50 @@ function draw() {
   drawScore();
   drawLife();
   drawLevel();
+  updateItems(); // アイテムの更新（落下）
+  checkItemCatch(); // パドルとの当たり判定
+  drawItems(); // アイテムの描画
   BallX += dx;
   BallY += dy;
 
   //　パドルの移動
   if (RightPressed) {
-    PaddleX = Math.min(PaddleX + 7, ScreenWidth - PaddleWidth);
+    PaddleX = Math.min(PaddleX + PaddleSpeed, ScreenWidth - PaddleWidth);
   } else if (LeftPressed) {
-    PaddleX = Math.max(PaddleX - 7, 0);
+    PaddleX = Math.max(PaddleX - PaddleSpeed, 0);
   }
 
   //　水平方向の反転
   if (BallX + dx > ScreenWidth - BallRadius || BallX + dx < BallRadius) {
     dx = -dx;
-    playSound("ボール反転.mp3");
+    playSound("ball-bounce.mp3");
   }
 
   // 垂直方向の反転
   if (BallY + dy < BallRadius) {
     dy = -dy;
-    playSound("ボール反転.mp3");
+    playSound("ball-bounce.mp3");
   } else if (
-    BallY + dy > ScreenHeight - BallRadius - PaddleHeight &&
+    BallY + dy >
+      ScreenHeight - BallRadius - PaddleHeight - PaddleOffsetBottom &&
     PaddleX < BallX + dx + BallRadius &&
     PaddleX + PaddleWidth > BallX + dx - BallRadius
   ) {
     dy = -dy;
     dx += (Math.random() - 0.5) * 0.5;
-    BallY = ScreenHeight - BallRadius - PaddleHeight; //　すり抜け禁止
-    playSound("ボール反転.mp3");
+    BallY = ScreenHeight - BallRadius - PaddleHeight - PaddleOffsetBottom; //　すり抜け禁止
+    playSound("ball-bounce.mp3");
   } else if (BallY + dy > ScreenHeight) {
-    playSound("失敗.mp3");
+    playSound("failure.mp3");
     life--;
     BallX = ScreenWidth / 2;
     BallY = ScreenHeight - 50;
-    dy = -3;
-    dx = 3;
+    dy = -4;
+    dx = 4;
     PaddleX = (ScreenWidth - PaddleWidth) / 2;
     if (life === 0) {
-      const text = "Game Over";
-      ctx.font = "35px Arial";
-      const textWidth = ctx.measureText(text).width;
-      const centerX = (CanvasWidth - textWidth) / 2; //　中央に配置
-      ctx.fillStyle = "#fff";
-      ctx.fillText(text, centerX, 150);
-      const text2 = "Enterでもう一度";
-      ctx.font = "20px Arial";
-      const textWidth2 = ctx.measureText(text2).width; // 文字の幅
-      const centerX2 = (CanvasWidth - textWidth2) / 2; //　中央に配置
-      ctx.fillText(text2, centerX2, 190);
+      GameOverScreen.classList.toggle("hidden");
+      TotalScore.innerText = "スコア: " + score;
       cancelAnimationFrame(animationId);
       return;
     }
@@ -506,10 +423,21 @@ function draw() {
 document.addEventListener("keydown", keyDownHandler);
 //　keyが離れた時
 document.addEventListener("keyup", keyUpHandler);
+//　マウス操作
+document.addEventListener("mousemove", mouseMoveHandler);
+
+// ウィンドウリサイズ時にCanvasサイズを適切
+window.addEventListener("resize", resizeCanvas);
 
 //　スタートボタンが押された時
 StartBtn.addEventListener("click", () => {
-  StartBtn.classList.toggle("hidden");
+  StartScreen.classList.toggle("hidden");
+  init();
+});
+
+//　もう一度が押された時
+AgainBtn.addEventListener("click", () => {
+  GameOverScreen.classList.toggle("hidden");
   init();
 });
 
@@ -519,8 +447,6 @@ function keyDownHandler(e) {
     RightPressed = true;
   } else if (e.key === "ArrowLeft") {
     LeftPressed = true;
-  } else if (e.key === "Enter") {
-    location.reload();
   }
 }
 
@@ -531,4 +457,155 @@ function keyUpHandler(e) {
   } else if (e.key === "ArrowLeft") {
     LeftPressed = false;
   }
+}
+
+function mouseMoveHandler(e) {
+  const rect = canvas.getBoundingClientRect();
+  const scaleX = canvas.width / rect.width;
+
+  let relativeX = (e.clientX - rect.left) * scaleX;
+
+  // パドルがキャンバスからはみ出さないように制限
+  const minX = PaddleWidth / 2;
+  const maxX = canvas.width - PaddleWidth / 2;
+
+  if (relativeX < minX) {
+    relativeX = minX;
+  } else if (relativeX > maxX) {
+    relativeX = maxX;
+  }
+
+  PaddleX = relativeX - PaddleWidth / 2;
+}
+
+// アイテムの種類
+const ITEM_TYPES = ["status_up", "life", "status_dawn", "none"];
+
+// アイテムを保持する配列
+let items = [];
+
+// ブロックが崩れたときにアイテムを生成
+function onBlockDestroyed(blockX, blockY) {
+  let randomType = ITEM_TYPES[Math.floor(Math.random() * ITEM_TYPES.length)];
+
+  // 8割の確率でnone
+  if (Math.random() < 0.8) {
+    randomType = ITEM_TYPES[ITEM_TYPES.length - 1];
+  }
+
+  if (randomType !== "none") {
+    items.push({
+      x: blockX,
+      y: blockY,
+      type: randomType,
+      width: 20,
+      height: 20,
+      dy: 2, // 落下速度
+    });
+  }
+}
+
+// アイテムを描画する関数
+function drawItems() {
+  for (let i = 0; i < items.length; i++) {
+    let item = items[i];
+
+    ctx.fillStyle =
+      item.type === "status_up"
+        ? "yellow"
+        : item.type === "life"
+        ? "red"
+        : item.type === "status_dawn"
+        ? "blue"
+        : "gray";
+
+    ctx.fillRect(item.x, item.y, item.width, item.height);
+  }
+}
+
+// アイテムを落下させる処理
+function updateItems() {
+  for (let i = 0; i < items.length; i++) {
+    items[i].y += items[i].dy;
+
+    // 画面下まで落ちたら削除
+    if (items[i].y > canvas.height) {
+      items.splice(i, 1);
+      i--;
+    }
+  }
+}
+
+// アイテムがパドルに当たったか確認
+function checkItemCatch() {
+  for (let i = 0; i < items.length; i++) {
+    let item = items[i];
+
+    if (
+      item.y + item.height >= PaddleY && // アイテムがパドルに到達
+      item.x >= PaddleX &&
+      item.x <= PaddleX + PaddleWidth
+    ) {
+      applyItemEffect(item.type);
+      items.splice(i, 1); // アイテムを削除
+      i--;
+    }
+  }
+}
+
+// アイテムの効果を適用
+function applyItemEffect(type) {
+  score += 50;
+  if (type === "status_up") {
+    StatusUp();
+    playSound("status-up.mp3");
+  } else if (type === "life") {
+    playSound("heal.mp3");
+    if (life >= "3") {
+      score += 100;
+    } else {
+      life++;
+    }
+  } else if (type === "status_dawn") {
+    StatusDawn();
+    playSound("status-dawn.mp3");
+  }
+}
+
+function StatusUp() {
+  if (status_up == false) {
+    return;
+  }
+
+  status_up = false;
+
+  BallColor = "yellow";
+  breakPower = 3;
+  BallRadius += 5;
+
+  // 10秒後無効果
+  setTimeout(() => {
+    status_up = true;
+    BallColor = "white";
+    breakPower = 1;
+    BallRadius -= 5;
+  }, 10000);
+}
+
+function StatusDawn() {
+  if (status_dawn == false) {
+    return;
+  }
+  status_dawn = false;
+  PaddleColor = "blue";
+  PaddleWidth -= 20;
+  PaddleSpeed -= 3;
+
+  // 10秒後無効果
+  setTimeout(() => {
+    status_dawn = true;
+    PaddleColor = "white";
+    PaddleWidth += 20;
+    PaddleSpeed += 3;
+  }, 2000);
 }

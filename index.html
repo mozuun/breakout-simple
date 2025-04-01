@@ -7,11 +7,19 @@
     <link rel="stylesheet" href="style.css" />
   </head>
   <body>
-    <div id="inner">
-      <button id="title">スタート</button>
+    <div id="game_inner">
+      <div id="start_screen">
+        <p id="start_title">Simple Breakout</p>
+        <button id="start_btn">スタート</button>
+      </div>
+      <div id="game_over_screen" class="hidden">
+        <span id="game_over_title">GameOver</span>
+        <p id="score"></p>
+        <button id="again_btn">もう一度</button>
+      </div>
+      <canvas id="canvas"></canvas>
     </div>
-    <canvas id="canvas"></canvas>
-    <canvas id="bgcanvas"></canvas>
+
     <script src="./script.js"></script>
   </body>
 </html>
