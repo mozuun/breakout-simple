@@ -48,21 +48,18 @@ function resizeCanvas() {
   ScreenHeight = CanvasSize;
 
   if (window.innerWidth >= BreakPoint) {
-    BallRadius = 10;
-    PaddleWidth = 80;
-    PaddleHeight = 16;
     //　ブロック
     blockColumnCount = 8;
     blockHeight = ScreenHeight / 20;
   } else {
-    BallRadius = 8;
-    PaddleWidth = 60;
-    PaddleHeight = 8;
     //　ブロック
     blockColumnCount = 6;
     blockHeight = ScreenHeight / 16;
   }
   blockRowCount = 1;
+  BallRadius = 10;
+  PaddleWidth = 80;
+  PaddleHeight = 16;
   blockWidth = ScreenWidth / blockColumnCount;
 }
 
@@ -590,7 +587,7 @@ function StatusDawn() {
   setTimeout(() => {
     status_dawn = true;
     PaddleColor = "white";
-    PaddleWidth += 20;
+    PaddleWidth += 30;
     PaddleSpeed += 3;
   }, 2000);
 }

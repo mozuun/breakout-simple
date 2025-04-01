@@ -18,7 +18,7 @@ html {
   justify-content: center;
   align-items: center;
   width: 500px;
-  height: 500px;
+  aspect-ratio: 1 / 1;
 }
 
 #canvas {
@@ -103,8 +103,7 @@ html {
 
 @media screen and (max-width: 516px) {
   #game_inner {
-    width: 100%;
-    height: auto;
+    width: 100vw;
     aspect-ratio: 1 / 1;
   }
 
