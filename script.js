@@ -276,6 +276,9 @@ function collisionDetection() {
             blocks[y][x].isVisible = false; // ブロックを消す
             onBlockDestroyed(blockX, blockY);
             score++; // スコア加算
+            if (status_up == false) {
+              playSound("ball-bounce.mp3");
+            }
           }
         }
       }
@@ -424,7 +427,9 @@ document.addEventListener("keydown", keyDownHandler);
 //　keyが離れた時
 document.addEventListener("keyup", keyUpHandler);
 //　マウス操作
-document.addEventListener("mousemove", mouseMoveHandler);
+canvas.addEventListener("mousemove", mouseMoveHandler);
+// タッチ操作
+canvas.addEventListener("touchmove", touchMoveHandler);
 
 // ウィンドウリサイズ時にCanvasサイズを適切
 window.addEventListener("resize", resizeCanvas);
@@ -457,25 +462,6 @@ function keyUpHandler(e) {
   } else if (e.key === "ArrowLeft") {
     LeftPressed = false;
   }
-}
-
-function mouseMoveHandler(e) {
-  const rect = canvas.getBoundingClientRect();
-  const scaleX = canvas.width / rect.width;
-
-  let relativeX = (e.clientX - rect.left) * scaleX;
-
-  // パドルがキャンバスからはみ出さないように制限
-  const minX = PaddleWidth / 2;
-  const maxX = canvas.width - PaddleWidth / 2;
-
-  if (relativeX < minX) {
-    relativeX = minX;
-  } else if (relativeX > maxX) {
-    relativeX = maxX;
-  }
-
-  PaddleX = relativeX - PaddleWidth / 2;
 }
 
 // アイテムの種類
@@ -578,7 +564,6 @@ function StatusUp() {
   }
 
   status_up = false;
-
   BallColor = "yellow";
   breakPower = 3;
   BallRadius += 5;
@@ -598,7 +583,7 @@ function StatusDawn() {
   }
   status_dawn = false;
   PaddleColor = "blue";
-  PaddleWidth -= 20;
+  PaddleWidth -= 30;
   PaddleSpeed -= 3;
 
   // 10秒後無効果
@@ -608,4 +593,38 @@ function StatusDawn() {
     PaddleWidth += 20;
     PaddleSpeed += 3;
   }, 2000);
+}
+
+// マウス操作
+function mouseMoveHandler(e) {
+  const rect = canvas.getBoundingClientRect();
+  const scaleX = canvas.width / rect.width;
+
+  let relativeX = (e.clientX - rect.left) * scaleX;
+  setPaddlePosition(relativeX);
+}
+
+// タッチした移動の間の処理
+function touchMoveHandler(e) {
+  e.preventDefault(); // スクロール防止
+
+  const rect = canvas.getBoundingClientRect();
+  const scaleX = canvas.width / rect.width;
+
+  let relativeX = (e.touches[0].clientX - rect.left) * scaleX;
+  setPaddlePosition(relativeX);
+}
+
+// タッチとマウスの共通
+function setPaddlePosition(relativeX) {
+  const minX = PaddleWidth / 2;
+  const maxX = canvas.width - PaddleWidth / 2;
+
+  if (relativeX < minX) {
+    relativeX = minX;
+  } else if (relativeX > maxX) {
+    relativeX = maxX;
+  }
+
+  PaddleX = relativeX - PaddleWidth / 2;
 }
